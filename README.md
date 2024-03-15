@@ -26,6 +26,7 @@ MiniKube steps :
     minikube status
     minikube dashboard
     minikube start --driver=<Driver-name>
+    minikube start --kubernetes-version=v1.26.1 --driver=docker
 -- delete --
     minikube delete
   ```
