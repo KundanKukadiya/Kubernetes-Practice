@@ -1,0 +1,61 @@
+## How to update kubernetes cluster
+
+we are using kubeadm in k8s and need to upgrade new version 1.29
+
+Here is the steps we have to follow :
+
+The upgrade workflow at high level is the following:
+
+1.Upgrade a primary control plane node.
+2.Upgrade additional control plane nodes.
+3.Upgrade worker nodes.
+
+## Changing the package repository
+
+> vim /etc/apt/sources.list.d/kubernetes.list
+> deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
+
+## Determine which version to upgrade to
+
+# Find the latest 1.29 version in the list.
+# It should look like 1.29.x-*, where x is the latest patch.
+> sudo apt update
+> sudo apt-cache madison kubeadm
+
+## Upgrading control plane nodes
+The upgrade procedure on control plane nodes should be executed one node at a time. 
+Pick a control plane node that you wish to upgrade first. 
+It must have the /etc/kubernetes/admin.conf file
+
+1. Upgrade kubeadm:
+ > # replace x in 1.29.x-* with the latest patch version
+ > sudo apt-mark unhold kubeadm && \
+ > sudo apt-get update && sudo apt-get install -y kubeadm='1.29.x-*' && \
+ > sudo apt-mark hold kubeadm
+
+2. Verify that the download works and has the expected version:
+ > kubeadm version
+
+3. Verify the upgrade plan:
+ > sudo kubeadm upgrade plan
+
+4.Choose a version to upgrade to, and run the appropriate command. For example:
+ > sudo kubeadm upgrade apply v1.29.x
+
+## Drain the nodes
+# replace <node-to-drain> with the name of your node you are draining
+ > kubectl drain <node-to-drain> --ignore-daemonsets 
+
+## Upgrade kubelet and kubectl
+# replace x in 1.29.x-* with the latest patch version
+ > sudo apt-mark unhold kubelet kubectl && \
+ > sudo apt-get update && sudo apt-get install -y kubelet='1.29.x-*' kubectl='1.29.x-*' && \
+ > sudo apt-mark hold kubelet kubectl
+
+# Restart the kubelet:
+ > sudo systemctl daemon-reload
+ > sudo systemctl restart kubelet
+
+#Uncordon the node
+ > Bring the node back online by marking it schedulable:
+ > kubectl uncordon <node-to-uncordon>
